@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupplementRx — Your Trusted Supplement Advisor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green:     #1a6b4a;
+      --green-mid: #2d8f63;
+      --green-lt:  #e8f5ee;
+      --gold:      #c9a84c;
+      --gold-lt:   #fdf6e3;
+      --dark:      #111c17;
+      --mid:       #3a4a42;
+      --muted:     #7a8c82;
+      --bg:        #f9faf8;
+      --white:     #ffffff;
+      --radius:    14px;
+      --shadow:    0 4px 32px rgba(26,107,74,0.10);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(249,250,248,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(26,107,74,0.10);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5%;
+      height: 68px;
+    }
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      color: var(--green);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--gold); }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--mid);
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--green); }
+    .nav-cta {
+      background: var(--green);
+      color: white !important;
+      padding: 9px 22px;
+      border-radius: 50px;
+      transition: background 0.2s !important;
+    }
+    .nav-cta:hover { background: var(--green-mid) !important; color: white !important; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 120px 5% 80px;
+      background:
+        radial-gradient(ellipse 60% 70% at 70% 50%, rgba(26,107,74,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.08) 0%, transparent 60%),
+        var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -80px; right: -80px;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,107,74,0.08), transparent 70%);
+      pointer-events: none;
+    }
+    .hero-content { max-width: 580px; position: relative; z-index: 1; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green-lt);
+      border: 1px solid rgba(26,107,74,0.2);
+      color: var(--green);
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge::before { content: '●'; font-size: 8px; color: var(--green-mid); }
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      line-height: 1.1;
+      color: var(--dark);
+      margin-bottom: 22px;
+      letter-spacing: -1px;
+    }
+    .hero h1 em {
+      font-style: italic;
+      color: var(--green);
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--mid);
+      line-height: 1.7;
+      margin-bottom: 36px;
+      font-weight: 300;
+      max-width: 480px;
+    }
+    .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--green);
+      color: white;
+      border: none;
+      padding: 15px 32px;
+      border-radius: 50px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(26,107,74,0.25);
+    }
+    .btn-primary:hover {
+      background: var(--green-mid);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(26,107,74,0.32);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--green);
+      border: 1.5px solid var(--green);
+      padding: 15px 32px;
+      border-radius: 50px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: var(--green-lt);
+    }
+    .hero-stats {
+      display: flex; gap: 40px; margin-top: 56px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(26,107,74,0.12);
+    }
+    .stat-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      color: var(--green);
+      display: block;
+    }
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── HERO VISUAL ── */
+    .hero-visual {
+      position: absolute; right: 5%; top: 50%;
+      transform: translateY(-50%);
+      width: 420px;
+    }
+    .hero-card {
+      background: white;
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(26,107,74,0.08);
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .hero-card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
+    .supplement-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green-lt);
+      color: var(--green);
+      padding: 7px 14px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin: 4px;
+    }
+    .supplement-pill.gold {
+      background: var(--gold-lt);
+      color: #8a6a1a;
+    }
+    .hero-card-icon {
+      width: 36px; height: 36px;
+      background: var(--green-lt);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .hero-card h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+    .hero-card p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* ── FEATURES ── */
+    .section { padding: 100px 5%; }
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      color: var(--dark);
+      line-height: 1.2;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+    .section-subtitle {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 520px;
+      font-weight: 300;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 56px;
+    }
+    .feature-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 32px;
+      border: 1px solid rgba(26,107,74,0.08);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--green), var(--gold));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .feature-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .feature-card:hover::after { transform: scaleX(1); }
+    .feature-icon {
+      width: 52px; height: 52px;
+      background: var(--green-lt);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 10px;
+    }
+    .feature-card p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-section {
+      background: var(--dark);
+      color: white;
+      padding: 100px 5%;
+    }
+    .how-section .section-label { color: var(--gold); }
+    .how-section .section-title { color: white; }
+    .how-section .section-subtitle { color: rgba(255,255,255,0.5); }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 32px;
+      margin-top: 60px;
+    }
+    .step {
+      position: relative;
+      padding-left: 0;
+    }
+    .step-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 3.5rem;
+      color: rgba(255,255,255,0.08);
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    .step h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 10px;
+    }
+    .step p {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.6;
+    }
+    .step-dot {
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      margin-bottom: 20px;
+    }
+
+    /* ── CATEGORIES ── */
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+      margin-top: 56px;
+    }
+    .category-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 24px 16px;
+      text-align: center;
+      border: 1px solid rgba(26,107,74,0.08);
+      cursor: pointer;
+      transition: all 0.25s;
+      text-decoration: none;
+      display: block;
+    }
+    .category-card:hover {
+      background: var(--green-lt);
+      border-color: var(--green);
+      transform: translateY(-2px);
+    }
+    .category-card .cat-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+    .category-card h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+    .category-card p {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ── TRUST SECTION ── */
+    .trust-section {
+      background: var(--green-lt);
+      border-top: 1px solid rgba(26,107,74,0.12);
+      border-bottom: 1px solid rgba(26,107,74,0.12);
+      padding: 60px 5%;
+      text-align: center;
+    }
+    .trust-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 60px; flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--green);
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .trust-item span { font-size: 1.4rem; }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer {
+      background: var(--gold-lt);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: var(--radius);
+      padding: 20px 28px;
+      margin: 0 5% 40px;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .disclaimer-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+    .disclaimer p {
+      font-size: 0.82rem;
+      color: #7a6020;
+      line-height: 1.6;
+    }
+    .disclaimer strong { color: #5a4510; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--dark);
+      color: rgba(255,255,255,0.5);
+      padding: 60px 5% 40px;
+    }
+    .footer-top {
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 40px;
+      margin-bottom: 48px;
+    }
+    .footer-brand .nav-logo { color: white; display: block; margin-bottom: 12px; }
+    .footer-brand p { font-size: 0.85rem; max-width: 260px; line-height: 1.6; }
+    .footer-col h5 {
+      color: white; font-size: 0.85rem; font-weight: 600;
+      margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .footer-col a {
+      display: block; color: rgba(255,255,255,0.45);
+      text-decoration: none; font-size: 0.85rem;
+      margin-bottom: 10px; transition: color 0.2s;
+    }
+    .footer-col a:hover { color: white; }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 28px;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      font-size: 0.8rem;
+    }
+
+    /* ── CHATBOT ── */
+    #chatbot-toggle {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--green);
+      color: white; border: none;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      cursor: pointer; z-index: 1000;
+      font-size: 24px;
+      box-shadow: 0 6px 24px rgba(26,107,74,0.4);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.3s;
+    }
+    #chatbot-toggle:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 32px rgba(26,107,74,0.5);
+    }
+    #chatbot-toggle .toggle-label {
+      position: absolute; right: 70px; top: 50%;
+      transform: translateY(-50%);
+      background: var(--dark);
+      color: white;
+      font-size: 12px; font-weight: 500;
+      padding: 6px 12px; border-radius: 20px;
+      white-space: nowrap;
+      opacity: 0; transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    #chatbot-toggle:hover .toggle-label { opacity: 1; }
+
+    #chatbot-box {
+      position: fixed; bottom: 100px; right: 28px;
+      width: 380px; height: 560px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      display: none; flex-direction: column;
+      z-index: 999;
+      overflow: hidden;
+      border: 1px solid rgba(26,107,74,0.1);
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #chatbot-header {
+      background: var(--green);
+      padding: 18px 20px;
+      display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0;
+    }
+    .chat-avatar {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .chat-header-info h4 {
+      color: white; font-size: 0.95rem; font-weight: 600; margin-bottom: 2px;
+    }
+    .chat-header-info p {
+      color: rgba(255,255,255,0.7); font-size: 0.75rem;
+    }
+    .chat-online {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 5px;
+      color: rgba(255,255,255,0.8); font-size: 0.75rem;
+    }
+    .chat-online::before {
+      content: '';
+      width: 7px; height: 7px;
+      background: #5cdb95;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    #chatbot-close {
+      background: none; border: none; color: rgba(255,255,255,0.6);
+      cursor: pointer; font-size: 18px; padding: 4px; margin-left: 8px;
+      transition: color 0.2s;
+    }
+    #chatbot-close:hover { color: white; }
+
+    #chatbot-messages {
+      flex: 1;
+      padding: 20px 16px;
+      overflow-y: auto;
+      background: #f7f9f8;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    #chatbot-messages::-webkit-scrollbar { width: 4px; }
+    #chatbot-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+
+    .message {
+      max-width: 82%;
+      padding: 11px 15px;
+      border-radius: 16px;
+      font-size: 0.875rem;
+      line-height: 1.55;
+      word-wrap: break-word;
+    }
+    .message.user {
+      background: var(--green);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .message.bot {
+      background: white;
+      color: var(--dark);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid rgba(26,107,74,0.08);
+    }
+    .message-sender {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .typing-indicator {
+      background: white;
+      border: 1px solid rgba(26,107,74,0.08);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 12px 16px;
+      border-radius: 16px; border-bottom-left-radius: 4px;
+      align-self: flex-start;
+      display: none;
+    }
+    .typing-dots { display: flex; gap: 4px; align-items: center; }
+    .typing-dots span {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%,60%,100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    #chatbot-quick {
+      padding: 10px 16px 4px;
+      display: flex; gap: 8px; flex-wrap: wrap;
+      background: white;
+      border-top: 1px solid rgba(26,107,74,0.08);
+      flex-shrink: 0;
+    }
+    .quick-btn {
+      background: var(--green-lt);
+      color: var(--green);
+      border: 1px solid rgba(26,107,74,0.2);
+      padding: 5px 12px;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .quick-btn:hover { background: var(--green); color: white; }
+
+    #chatbot-input {
+      display: flex; align-items: center;
+      padding: 12px 16px;
+      border-top: 1px solid rgba(26,107,74,0.1);
+      background: white;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #user-input {
+      flex: 1;
+      border: 1.5px solid rgba(26,107,74,0.15);
+      border-radius: 50px;
+      padding: 10px 16px;
+      font-size: 0.875rem;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      color: var(--dark);
+      background: var(--bg);
+      transition: border-color 0.2s;
+    }
+    #user-input:focus { border-color: var(--green); }
+    #user-input::placeholder { color: var(--muted); }
+    #send-btn {
+      width: 40px; height: 40px;
+      background: var(--green);
+      border: none; border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    #send-btn:hover { background: var(--green-mid); transform: scale(1.05); }
+    #send-btn svg { width: 16px; height: 16px; fill: white; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">Supplement<span>Rx</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#categories">Categories</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#" class="nav-cta" onclick="openChat()">Ask Our Advisor</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">AI-Powered Supplement Guidance</div>
+    <h1>Your personal guide to <em>smarter</em> supplement choices</h1>
+    <p>Ask our AI health advisor anything about supplements — from what helps with a condition, to safety, drug interactions, and more. Backed by a database of over 3,800 supplements.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="openChat()">Chat with our Advisor</button>
+      <button class="btn-secondary" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Learn more</button>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <span class="stat-num">3,800+</span>
+        <span class="stat-label">Supplements</span>
+      </div>
+      <div>
+        <span class="stat-num">100+</span>
+        <span class="stat-label">Health conditions</span>
+      </div>
+      <div>
+        <span class="stat-num">24/7</span>
+        <span class="stat-label">Available</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="hero-card">
+      <div class="hero-card-label">Commonly asked about</div>
+      <div>
+        <span class="supplement-pill">🌿 Ashwagandha</span>
+        <span class="supplement-pill">💊 Vitamin D3</span>
+        <span class="supplement-pill gold">⭐ Magnesium</span>
+        <span class="supplement-pill">🫀 Omega-3</span>
+        <span class="supplement-pill gold">⭐ Turmeric</span>
+        <span class="supplement-pill">😴 Melatonin</span>
+        <span class="supplement-pill">🧠 Lion's Mane</span>
+      </div>
+    </div>
+    <div class="hero-card" style="display:flex;gap:16px;align-items:flex-start;">
+      <div style="flex:1;">
+        <div class="hero-card-icon">🛡️</div>
+        <h4>Safe & evidence-based</h4>
+        <p>Every answer is grounded in clinical data — not guesswork.</p>
+      </div>
+      <div style="flex:1;">
+        <div class="hero-card-icon">⚡</div>
+        <h4>Instant answers</h4>
+        <p>Ask anything — get a clear, human response in seconds.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-section">
+  <div class="trust-row">
+    <div class="trust-item"><span>🔬</span> Evidence-based data</div>
+    <div class="trust-item"><span>🔒</span> Private conversations</div>
+    <div class="trust-item"><span>⚠️</span> Drug interaction alerts</div>
+    <div class="trust-item"><span>🤝</span> Not a replacement for your doctor</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">What we offer</div>
+  <div class="section-title">Everything you need to make<br>informed supplement decisions</div>
+  <p class="section-subtitle">Our AI advisor translates complex clinical data into clear, honest guidance you can actually act on.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🌿</div>
+      <h3>Supplement deep-dives</h3>
+      <p>Get a full picture on any supplement — what it's used for, how it works, what the evidence says, and what to watch out for.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💊</div>
+      <h3>Drug interaction checks</h3>
+      <p>Ask whether a supplement is safe with your current medication. We flag known interactions clearly and honestly.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>Condition-based guidance</h3>
+      <p>Tell us your health concern — anxiety, sleep, joint pain, energy — and we'll show you what supplements the data supports.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤰</div>
+      <h3>Pregnancy safety</h3>
+      <p>Clear, careful guidance on what's considered safe or unsafe during pregnancy — always with the caveat to check with your OB.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚠️</div>
+      <h3>Side effect awareness</h3>
+      <p>Know what to expect before you start. We explain potential side effects in plain language, not medical jargon.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <h3>Real conversation</h3>
+      <p>Ask follow-up questions, go deeper on a topic, or switch direction. Our advisor keeps up with the full conversation context.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="section" id="categories" style="background: white; padding-top: 80px; padding-bottom: 80px;">
+  <div class="section-label">Browse by category</div>
+  <div class="section-title">What are you looking for?</div>
+  <p class="section-subtitle">Click any category to start a conversation with our advisor about it.</p>
+  <div class="categories-grid">
+    <a class="category-card" href="#" onclick="askAbout('What supplements help with sleep and insomnia?')">
+      <span class="cat-icon">😴</span>
+      <h4>Sleep</h4>
+      <p>Melatonin, Magnesium & more</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements help with anxiety and stress?')">
+      <span class="cat-icon">🧘</span>
+      <h4>Stress & Anxiety</h4>
+      <p>Adaptogens & calming herbs</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements support energy and reduce fatigue?')">
+      <span class="cat-icon">⚡</span>
+      <h4>Energy & Fatigue</h4>
+      <p>B vitamins, CoQ10 & more</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements support heart and cardiovascular health?')">
+      <span class="cat-icon">🫀</span>
+      <h4>Heart Health</h4>
+      <p>Omega-3, CoQ10, Magnesium</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements help with joint pain and inflammation?')">
+      <span class="cat-icon">🦴</span>
+      <h4>Joint & Bone</h4>
+      <p>Glucosamine, Turmeric</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements boost immune system function?')">
+      <span class="cat-icon">🛡️</span>
+      <h4>Immune Support</h4>
+      <p>Zinc, Vitamin C, Elderberry</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements support brain health and cognitive function?')">
+      <span class="cat-icon">🧠</span>
+      <h4>Brain & Cognition</h4>
+      <p>Lion's Mane, Bacopa</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements help with weight management?')">
+      <span class="cat-icon">⚖️</span>
+      <h4>Weight Management</h4>
+      <p>Berberine, Green tea extract</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements support gut health and digestion?')">
+      <span class="cat-icon">🌱</span>
+      <h4>Gut Health</h4>
+      <p>Probiotics, Digestive enzymes</p>
+    </a>
+    <a class="category-card" href="#" onclick="askAbout('What supplements help with sports performance and recovery?')">
+      <span class="cat-icon">🏋️</span>
+      <h4>Sports & Recovery</h4>
+      <p>Creatine, BCAAs, Electrolytes</p>
+    </a>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="section-label">How it works</div>
+  <div class="section-title" style="color:white;">Simple, honest guidance<br>in three steps</div>
+  <p class="section-subtitle">No sign-up, no jargon. Just ask, and get a clear answer.</p>
+  <div class="steps-grid">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-dot"></div>
+      <h3>Ask your question</h3>
+      <p>Type anything — a health concern, a supplement name, a question about safety. Our advisor understands natural language.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-dot"></div>
+      <h3>We search the database</h3>
+      <p>Our AI instantly searches over 3,800 supplements, cross-referencing conditions, drug interactions, and clinical overviews.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-dot"></div>
+      <h3>You get a clear answer</h3>
+      <p>No jargon, no data dumps. A warm, professional response that actually helps you understand your options.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-dot"></div>
+      <h3>Keep the conversation going</h3>
+      <p>Ask follow-ups, go deeper, or explore a new topic. The advisor remembers everything discussed in the session.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer" style="margin-top: 60px;">
+  <div class="disclaimer-icon">⚠️</div>
+  <p><strong>Important:</strong> SupplementRx is an informational tool powered by clinical supplement data. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult your doctor or a licensed healthcare provider before starting any supplement, especially if you are pregnant, nursing, taking medication, or have a medical condition.</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a class="nav-logo">Supplement<span style="color:var(--gold)">Rx</span></a>
+      <p>Empowering people to make smarter, safer supplement choices through honest, data-driven guidance.</p>
+    </div>
+    <div class="footer-col">
+      <h5>Explore</h5>
+      <a href="#">Sleep supplements</a>
+      <a href="#">Stress & anxiety</a>
+      <a href="#">Heart health</a>
+      <a href="#">Immune support</a>
+    </div>
+    <div class="footer-col">
+      <h5>Information</h5>
+      <a href="#">About the data</a>
+      <a href="#">How AI guidance works</a>
+      <a href="#">Privacy policy</a>
+      <a href="#">Terms of use</a>
+    </div>
+    <div class="footer-col">
+      <h5>Safety</h5>
+      <a href="#">Drug interactions</a>
+      <a href="#">Pregnancy safety</a>
+      <a href="#">Medical disclaimer</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 SupplementRx. All rights reserved.</span>
+    <span>For informational purposes only. Not medical advice.</span>
+  </div>
+</footer>
+
+<!-- CHATBOT TOGGLE -->
+<button id="chatbot-toggle" onclick="openChat()">
+  💬
+  <span class="toggle-label">Ask our advisor</span>
+</button>
+
+<!-- CHATBOT BOX -->
+<div id="chatbot-box">
+  <div id="chatbot-header">
+    <div class="chat-avatar">🧑‍⚕️</div>
+    <div class="chat-header-info">
+      <h4>Supplement Advisor</h4>
+      <p>Powered by clinical data · 3,800+ supplements</p>
+    </div>
+    <div class="chat-online">Online</div>
+    <button id="chatbot-close" onclick="closeChat()">✕</button>
+  </div>
+
+  <div id="chatbot-messages"></div>
+
+  <div class="typing-indicator" id="typing">
+    <div class="typing-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <div id="chatbot-quick">
+    <button class="quick-btn" onclick="quickAsk('What helps with sleep?')">😴 Sleep</button>
+    <button class="quick-btn" onclick="quickAsk('Supplements for anxiety?')">🧘 Anxiety</button>
+    <button class="quick-btn" onclick="quickAsk('Boost my energy naturally')">⚡ Energy</button>
+    <button class="quick-btn" onclick="quickAsk('Heart health supplements')">🫀 Heart</button>
+  </div>
+
+  <div id="chatbot-input">
+    <input type="text" id="user-input" placeholder="Ask about any supplement or health concern...">
+    <button id="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  const box      = document.getElementById('chatbot-box');
+  const messages = document.getElementById('chatbot-messages');
+  const input    = document.getElementById('user-input');
+  const typing   = document.getElementById('typing');
+
+  let chatOpened = false;
+
+  function openChat() {
+    box.style.display = 'flex';
+    box.style.flexDirection = 'column';
+    if (!chatOpened) {
+      appendMessage('bot', "Hello! I'm your personal supplement advisor. Whether you want to know what might help with a health concern, need safety information about a supplement, or want to check for drug interactions — I'm here to help. What's on your mind today?");
+      chatOpened = true;
+    }
+    setTimeout(() => input.focus(), 100);
+  }
+
+  function closeChat() {
+    box.style.display = 'none';
+  }
+
+  function askAbout(question) {
+    openChat();
+    setTimeout(() => {
+      input.value = question;
+      sendMessage();
+    }, 400);
+    return false;
+  }
+
+  function quickAsk(question) {
+    input.value = question;
+    sendMessage();
+  }
+
+  input.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") { e.preventDefault(); sendMessage(); }
+  });
+
+  async function sendMessage() {
+    const msg = input.value.trim();
+    if (!msg) return;
+    appendMessage('user', msg);
+    input.value = '';
+    document.getElementById('chatbot-quick').style.display = 'none';
+    showTyping();
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: msg })
+      });
+      const data = await response.json();
+      hideTyping();
+      appendMessage('bot', data.answer);
+    } catch (error) {
+      hideTyping();
+      appendMessage('bot', "I'm having trouble connecting right now. Please make sure the server is running and try again.");
+    }
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function showTyping() {
+    typing.style.display = 'block';
+    messages.appendChild(typing);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function hideTyping() {
+    typing.style.display = 'none';
+  }
+
+  function appendMessage(type, text) {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.alignItems = type === 'user' ? 'flex-end' : 'flex-start';
+
+    const sender = document.createElement('div');
+    sender.className = 'message-sender';
+    sender.textContent = type === 'user' ? 'You' : 'Supplement Advisor';
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${type}`;
+    msgDiv.textContent = text;
+
+    wrapper.appendChild(sender);
+    wrapper.appendChild(msgDiv);
+    messages.appendChild(wrapper);
+    messages.scrollTop = messages.scrollHeight;
+  }
+</script>
+</body>
+</html>
