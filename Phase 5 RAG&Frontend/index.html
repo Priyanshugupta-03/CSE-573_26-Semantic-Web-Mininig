@@ -1033,7 +1033,18 @@
 
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${type}`;
-    msgDiv.textContent = text;
+    msgDiv.innerHTML = text
+    .replace(/&/g, '&amp;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/### (.*?)\n/g, '<h4 style="margin:10px 0 4px;color:#1a6b4a">$1</h4>')
+    .replace(/- (.*?)\n/g, '<li style="margin-left:16px;margin-bottom:2px">$1</li>')
+    .replace(/⚠️ \*\*Safety Alerts:\*\*/g, '<div style="margin-top:10px;font-weight:600;color:#e67e22">⚠️ Safety Alerts:</div>')
+    .replace(/⚠️/g, '<span style="color:#e67e22">⚠️</span>')
+    .replace(/🤰/g, '<span style="color:#e74c3c">🤰</span>')
+    .replace(/Confidence: (High|Medium|Low)/g, '')
+    .replace(/\[Source:.*?\]/g, '')
+    .replace(/This is not medical advice\. Always consult a healthcare provider\./g, '<span style="font-size:0.78em;color:#7a8c82;font-style:italic">This is not medical advice. Always consult a healthcare provider.</span>')
+    .replace(/\n/g, '<br>');
 
     wrapper.appendChild(sender);
     wrapper.appendChild(msgDiv);

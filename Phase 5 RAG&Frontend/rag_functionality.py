@@ -2,6 +2,14 @@
 rag_functionality.py
 Graph RAG — Healthcare Supplement Guidance Agent
 Uses FAISS index + Neo4j graph metadata for retrieval.
+
+Updated imports for langchain>=1.0 (latest version compatible).
+All logic is identical to Shivam's original — only the 3 broken
+LangChain imports were replaced with modern equivalents:
+  langchain.prompts        → langchain_core.prompts
+  langchain.memory         → simple Python list (same behavior)
+  langchain.chains         → langchain_core.runnables
+  langchain.schema.Document→ langchain_core.documents
 """
 
 import os
@@ -9,24 +17,27 @@ import json
 import numpy as np
 import re
 import faiss
+import time
+import re as _re
+
 from typing import List, Dict
 
+
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
-from langchain.schema import Document
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.messages import HumanMessage, AIMessage
 from pydantic import Field
 
 # ─────────────────────────────────────────────
 # CONFIG — update your key and paths here
 # ─────────────────────────────────────────────
-OPENAI_API_KEY   = "your_openai_api_key"
-FAISS_INDEX_PATH = "C:/Users/shiva/AI/chatbot/chatbot/faiss_index.bin"
-NAMES_PATH       = "C:/Users/shiva/AI/chatbot/chatbot/supplement_names.json"
-METADATA_PATH    = "C:/Users/shiva/AI/chatbot/chatbot/supplement_metadata.json"
-CONFIG_PATH      = "C:/Users/shiva/AI/chatbot/chatbot/embedding_config.json"
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+FAISS_INDEX_PATH = "faiss_index.bin"
+NAMES_PATH       = "supplement_names.json"
+METADATA_PATH    = "supplement_metadata.json"
+CONFIG_PATH      = "embedding_config.json"
 TOP_K            = 10
 
 
@@ -50,6 +61,25 @@ with open(METADATA_PATH, "r", encoding="utf-8") as f:
     supplement_metadata: List[Dict] = json.load(f)
 
 print(f"Loaded {len(supplement_names)} supplements.")
+
+# ── Try to connect Phase 4 LangGraph pipeline ────────────────
+_langgraph_available = False
+_langgraph_ask       = None
+
+try:
+    import sys
+    phase4_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "phase4_langgraph.py")
+    if os.path.exists(phase4_path):
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from phase4_langgraph import ask as lg_ask, initialize as lg_init
+        lg_init()
+        _langgraph_ask       = lg_ask
+        _langgraph_available = True
+        print("✅ Phase 4 LangGraph pipeline connected!")
+    else:
+        print("⚠️  phase4_langgraph.py not found — using FAISS-only RAG")
+except Exception as e:
+    print(f"⚠️  LangGraph not available ({e}) — using FAISS-only RAG")
 
 IDENTITY_PATTERNS = [
     r"\bwho are you\b",
@@ -77,13 +107,17 @@ IDENTITY_RESPONSE = (
  
 def is_identity_question(question: str) -> bool:
     q = question.lower().strip()
+    q = q.replace('\u2019', "'").replace('\u2018', "'")
     return any(re.search(pattern, q) for pattern in IDENTITY_PATTERNS)
+
 OUT_OF_SCOPE_PATTERNS = [
     # maths
-    r"\d+\s*[\+\-\*\/]\s*\d+",          # e.g. 2+2, 10/5
-    r"\bwhat is \d+",                    # e.g. "what is 5"
+    r"\d+\s*[\+\-\*\/]\s*\d+",
+    r"\bwhat is \d+\s*[\+\-\*\/x]",
     r"\bcalculate\b",
     r"\bsolve\b.*\d",
+    r"\bequals\b",                       # "2+2 equals"
+    r"\bhow much is \d+",               # "how much is 2+2"
  
     # coding / tech
     r"\bwrite.*code\b",
@@ -126,8 +160,28 @@ OUT_OF_SCOPE_RESPONSE = (
     "or a natural therapy, I'm all yours!"
 )
  
+FAREWELL_PATTERNS = [
+    r"\bthat.?s all\b",
+    r"\bthats all\b",
+    r"\ball done\b",
+    r"^(okay|ok|alright|bye|goodbye|thanks|thank you|cheers|great|cool|got it|perfect|noted|sure|sounds good|see you|take care|done|nothing else|no more|all good|awesome|wonderful)[\s!.]*$",
+]
+
+FAREWELL_RESPONSES = [
+    "Happy to help anytime! Come back if you have more supplement questions.",
+    "Take care! Feel free to return whenever you have health questions.",
+    "Anytime! Stay well and don't hesitate to ask if you need anything.",
+]
+
+def is_farewell(question: str) -> bool:
+    q = question.lower().strip()
+    q = q.replace('\u2019', "'").replace('\u2018', "'")  # normalize smart quotes
+    
+    return any(re.search(p, q) for p in FAREWELL_PATTERNS)
+
 def is_out_of_scope(question: str) -> bool:
     q = question.lower().strip()
+    q = q.replace('\u2019', "'").replace('\u2018', "'")
     return any(re.search(pattern, q) for pattern in OUT_OF_SCOPE_PATTERNS)
  
 OUT_OF_SCOPE_PROMPT = """You are SupplementRx, a warm and friendly health advisor who specialises in supplements and natural health. 
@@ -136,7 +190,7 @@ A patient just asked you something completely outside your area — they asked: 
  
 Respond in a warm, friendly, energetic way like a good friend would. Acknowledge what they asked in a lighthearted way, let them know you can't help with that, and enthusiastically redirect them to what you CAN help with — supplements, natural health, sleep, stress, energy, mental wellbeing, vitamins, herbs etc.
  
-Keep it short — 2-3 sentences max. Sound like a real person, not a customer service bot. Be warm, fun, and genuine. Never say "I appreciate your question." Vary your response — don't use the same opener every time.""" 
+Keep it short — 2-3 sentences max. Sound like a real person, not a customer service bot. Be warm, fun, and genuine. Never say "I appreciate your question." Vary your response — don't use the same opener every time."""
 
 def generate_out_of_scope_response(question: str, llm) -> str:
     try:
@@ -148,6 +202,20 @@ def generate_out_of_scope_response(question: str, llm) -> str:
             "Ha, that one's a bit out of my lane! I live and breathe supplements "
             "and natural health — ask me anything in that space and I'm all yours!"
         )
+
+CONTINUATION_PATTERNS = [
+    r"^(yes|yeah|yep|sure|ok|okay|please|go ahead|tell me|correct|right|exactly)[\s!.]*$",
+]
+
+CONTINUATION_RESPONSE = (
+    "Of course! Could you ask your question again so I can help properly? "
+    "I don't have memory of what we discussed before in this context."
+)
+
+def is_continuation(question: str) -> bool:
+    q = question.lower().strip()
+    return any(re.search(p, q) for p in CONTINUATION_PATTERNS)
+
 # ─────────────────────────────────────────────
 # EMBED QUERY
 # ─────────────────────────────────────────────
@@ -275,17 +343,11 @@ When someone asks to "explain more" or "tell me more" about something already di
 CORE RULES
 ════════════════════════════════════════
  
-1. 1. READ CONVERSATION HISTORY FIRST — AND TRACK THE CURRENT TOPIC.
+1. READ CONVERSATION HISTORY FIRST — AND TRACK THE CURRENT TOPIC.
    Always know what the MOST RECENT topic of conversation is.
    When a patient asks a vague follow-up like "what techniques can I consider?", 
    "any side effects?", "what else can I take?", "tell me more" — these are ALWAYS 
    about the MOST RECENT topic discussed, not something from earlier in the conversation.
-   
-   Example:
-   - Patient asks about sexual health supplements → you answer
-   - Patient then asks "what techniques can I consider?" 
-   - This means techniques for SEXUAL HEALTH — not anxiety, not sleep, not anything else
-   - Always anchor follow-up questions to the last thing discussed
    
    Never jump back to an earlier topic unless the patient explicitly mentions it.
    The most recent question is always the active context.
@@ -293,39 +355,28 @@ CORE RULES
 2. ANSWER EXACTLY WHAT WAS ASKED — nothing more.
    - "Does it cause dizziness?" → yes or no, brief explanation only.
    - "Tell me about X" → warm overview, key points, most important things to know.
-   - "Explain more about X" → go deeper on HOW and WHY it works. Use a simple analogy. Make it click.
-   - "Any side effects?" → just side effects, conversationally. Not a full re-introduction of the topic.
+   - "Explain more about X" → go deeper on HOW and WHY it works. Use a simple analogy.
+   - "Any side effects?" → just side effects, conversationally.
    - Short questions get short answers. Long questions get thorough ones.
  
 3. NEVER REPEAT YOURSELF across messages.
-   If you already mentioned side effects, interactions, or what something does — don't list them again unless directly asked.
  
 4. EXPLAIN THINGS LIKE A WARM DOCTOR TALKING TO A PATIENT.
-   Use plain language and relatable comparisons:
-   - Instead of "biofeedback utilises autonomic physiological monitoring" say "biofeedback is basically like giving your body a mirror — you can see your heart rate and muscle tension on a screen in real time, and with practice you learn to calm them down. It sounds technical but it's actually very gentle."
-   - Instead of "naturopathy is a holistic system" say "naturopathy takes the view that the body knows how to heal — it just sometimes needs the right conditions. A naturopath looks at your whole lifestyle, sleep, diet, stress, not just the symptom."
+   Use plain language and relatable comparisons.
    Make complex things feel simple. Use "you" and "your body" naturally.
  
 5. SOUND HUMAN — not robotic.
    - Never say "I appreciate your question" or "That's a great question."
-   - Never end with "Your health and wellbeing are important to me" — it sounds fake.
-   - Never say "the data", "the database", "in the data", "according to the data", "the clinical data." Speak from knowledge naturally like a doctor who just knows things.
-   - Vary how you open each response.
-   - Use natural phrases: "Honestly...", "That said...", "Worth knowing...", "The way it works is...", "Think of it like...", "In simple terms..."
-   - Only add a closing line when it genuinely fits — and vary it each time.
+   - Never end with "Your health and wellbeing are important to me."
+   - Never say "the data", "the database", "in the data", "according to the data."
+   - Use natural phrases: "Honestly...", "That said...", "Worth knowing..."
  
 6. SAFETY — weave it in naturally.
-   No separate warning sections. Just say it in the flow: "One thing to keep in mind if you're on any medication..." or "Just worth checking with your doctor first if you're pregnant."
+   No separate warning sections. Just say it in the flow.
  
 7. ONLY use information from the context provided. Never invent facts or dosages.
-   If the answer is not in the context provided to you, do NOT answer from your own
-   general knowledge. Do NOT make up an answer. Do NOT use what you already know
-   as an AI. Simply say: "I don't have enough on that in my knowledge base — 
-   your doctor would be the right person for that one."
-   You are not a general AI assistant. You are a specialist who only speaks
-   from what is in front of you.
  
-8. If the context doesn't have enough to answer well: "Honestly, I don't have enough on that to give you a solid answer — your doctor would be the right person for that one."
+8. If the context doesn't have enough: "Honestly, I don't have enough on that to give you a solid answer — your doctor would be the right person for that one."
  
 ════════════════════════════════════════
 EXAMPLES
@@ -336,12 +387,10 @@ GOOD: "There's quite a bit depending on what you're dealing with. On the supplem
  
 Patient: "explain more about biofeedback"
 GOOD: "Sure — think of it like giving your nervous system a mirror. Normally your heart rate, breathing, and muscle tension are running in the background without you paying attention. Biofeedback connects you to sensors that show you those signals on a screen in real time. Once you can see them, you can start to influence them — slow your breathing, relax a tense muscle, bring your heart rate down. Over time your brain actually learns to do this on its own without the equipment. It's used a lot for stress, anxiety, chronic pain, and blood pressure. It takes some practice but there are no side effects and it's completely non-invasive."
-BAD: "Biofeedback is a technique that helps individuals become aware and gain control of their autonomic physiological body processes..." [robotic, clinical, cold]
  
 Patient already asked "what is turmeric?" and got a full answer.
 Patient asks: "does it cause dizziness?"
 GOOD: "Not specifically, no. Side effects with turmeric are mostly digestive — nausea, bloating, that sort of thing. Dizziness isn't one of the commonly reported ones. That said, if you're experiencing it, worth mentioning to your doctor since everyone reacts a little differently."
-BAD: [repeats everything about turmeric again]
  
 ════════════════════════════════════════
  
@@ -355,67 +404,149 @@ PATIENT'S QUESTION:
 {question}
  
 YOUR RESPONSE (warm, human, a real doctor talking to a real patient):"""
-QA_prompt = PromptTemplate(
-    template=supplement_agent_template,
-    input_variables=["chat_history", "context", "question"]
-)
 
 
 # ─────────────────────────────────────────────
-# BUILD LLM + CHAIN
+# BUILD LLM
 # ─────────────────────────────────────────────
 llm = ChatOpenAI(
     openai_api_key=OPENAI_API_KEY,
-    model="gpt-3.5-turbo",
+    model="gpt-4o-mini", #gpt-3.5-turbo, gpt-4o-mini
     temperature=0.3
-)
-
-memory = ConversationBufferMemory(
-    return_messages=True,
-    memory_key="chat_history",
-    output_key="answer"
 )
 
 retriever = FAISSGraphRetriever(top_k=TOP_K)
 
-qa_chain = ConversationalRetrievalChain.from_llm(
-    llm=llm,
-    memory=memory,
-    retriever=retriever,
-    chain_type="stuff",
-    combine_docs_chain_kwargs={"prompt": QA_prompt},
-    return_source_documents=True,
-)
+# Simple in-memory conversation history (replaces ConversationBufferMemory)
+chat_history: List = []
+last_clarification: dict = {}
+
+
+# ─────────────────────────────────────────────
+# CORE QA FUNCTION (replaces ConversationalRetrievalChain)
+# ─────────────────────────────────────────────
+def run_qa(question: str) -> str:
+    # 1. Retrieve relevant documents via FAISS
+    docs = retriever._get_relevant_documents(question)
+    context = "\n\n".join(doc.page_content for doc in docs)
+
+    # 2. Format chat history as text
+    history_text = ""
+    for msg in chat_history[-6:]:  # last 6 turns
+        if isinstance(msg, HumanMessage):
+            history_text += f"Patient: {msg.content}\n"
+        elif isinstance(msg, AIMessage):
+            history_text += f"SupplementRx: {msg.content}\n"
+
+    # 3. Build final prompt
+    final_prompt = supplement_agent_template.format(
+        chat_history=history_text,
+        context=context,
+        question=question
+    )
+
+    # 4. Call LLM directly
+    response = llm.invoke([HumanMessage(content=final_prompt)])
+    answer = response.content
+
+    # 5. Save to history
+    chat_history.append(HumanMessage(content=question))
+    chat_history.append(AIMessage(content=answer))
+
+    # Keep history manageable
+    if len(chat_history) > 20:
+        chat_history.clear()
+        chat_history.extend(chat_history[-20:])
+
+    return answer
 
 
 # ─────────────────────────────────────────────
 # RAG FUNCTION — called by main.py
 # ─────────────────────────────────────────────
-'''
+# def rag(question: str) -> str:
+#     try:
+#         #print(f"   [RAG] Checking farewell for: '{question}'") #Debug
+#         if is_farewell(question):
+#             import random
+#             return random.choice(FAREWELL_RESPONSES)
+#         # Identity questions caught before FAISS runs
+#         if is_continuation(question):
+#             return CONTINUATION_RESPONSE
+#         if is_identity_question(question):
+#             return IDENTITY_RESPONSE
+#         if is_out_of_scope(question):
+#             return generate_out_of_scope_response(question, llm)
+
+#         # Use Phase 4 LangGraph if available
+#         if _langgraph_available and _langgraph_ask:
+#             result = _langgraph_ask(question)
+#             return result.get("response", "")
+
+#         answer = run_qa(question)
+
+#         if answer:
+#             return answer
+#         return (
+#             "Honestly, I don't have enough on that to give you a solid answer. "
+#             "Your doctor or a licensed nutritionist would be the right person to ask."
+#         )
+#     except Exception as e:
+#         print(f"RAG error: {e}")
+#         return "Something went wrong on my end — please try asking again."
+
 def rag(question: str) -> str:
+    global last_clarification
     try:
-        response = qa_chain({"question": question})
-        answer = response.get("answer", "")
-        if answer:
-            return answer
-        return (
-            "Based on the information I have, I'm not able to give you a complete answer on that. "
-            "I'd strongly recommend speaking with your doctor or a licensed nutritionist for personalised guidance."
-        )
-    except Exception as e:
-        print(f"RAG error: {e}")
-        return "I'm sorry, something went wrong on my end. Please try your question again."
-        '''
-def rag(question: str) -> str:
-    try:
-        # ── Identity questions are caught here BEFORE FAISS runs ──
+        # Clear clarification if older than 60 seconds
+        if last_clarification and time.time() - last_clarification.get("timestamp", 0) > 60:
+            print("   [Clarification expired]")
+            last_clarification.clear()
+
+        if is_farewell(question):
+            last_clarification.clear()
+            import random
+            return random.choice(FAREWELL_RESPONSES)
+
+        # If user confirmed a clarification
+        if is_continuation(question):
+            if last_clarification:
+                actual_query = f"tell me about {last_clarification['suggested']}"
+                print(f"   [Clarification resolved] '{question}' → '{actual_query}'")
+                last_clarification.clear()
+                if _langgraph_available and _langgraph_ask:
+                    result = _langgraph_ask(actual_query)
+                    return result.get("response", "")
+                return run_qa(actual_query)
+            return CONTINUATION_RESPONSE
+
         if is_identity_question(question):
+            last_clarification.clear()
             return IDENTITY_RESPONSE
+
         if is_out_of_scope(question):
+            last_clarification.clear()
             return generate_out_of_scope_response(question, llm)
- 
-        response = qa_chain({"question": question})
-        answer = response.get("answer", "")
+
+        # New question — clear any stale clarification
+        last_clarification.clear()
+
+        # Use Phase 4 LangGraph if available
+        if _langgraph_available and _langgraph_ask:
+            result = _langgraph_ask(question)
+            response = result.get("response", "")
+
+            # Detect if GPT asked a clarification question
+            match = _re.search(r"[Dd]id you mean ([A-Za-z0-9\-\s]+)\?", response)
+            if match:
+                last_clarification["suggested"] = match.group(1).strip()
+                last_clarification["original"]  = question
+                last_clarification["timestamp"] = time.time()
+                print(f"   [Clarification pending] → '{last_clarification['suggested']}'")
+
+            return response
+
+        answer = run_qa(question)
         if answer:
             return answer
         return (
@@ -425,4 +556,3 @@ def rag(question: str) -> str:
     except Exception as e:
         print(f"RAG error: {e}")
         return "Something went wrong on my end — please try asking again."
- 

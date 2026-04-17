@@ -25,9 +25,9 @@ import json
 import time
 
 # ── Connection settings ───────────────────────────────────────
-NEO4J_URI      = "bolt://localhost:7687"
-NEO4J_USER     = "neo4j"
-NEO4J_PASSWORD = "password123"   # ← change if you set different
+NEO4J_URI      = "neo4j+s://8976bb7e.databases.neo4j.io"
+NEO4J_USER     = "8976bb7e"
+NEO4J_PASSWORD = "gKDaN4wgAI3gG6-NYgwZAIBLZB0YK7hpgBPnwxR8vKU"   # ← change if you set different
 
 INPUT_JSON     = "graph.json"
 
