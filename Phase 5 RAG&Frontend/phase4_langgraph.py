@@ -605,7 +605,7 @@ STRICT RULES:
 4. Do NOT end with "This is not medical advice"
 5. Always include safety alerts naturally in the flow
 6. If safety alerts appear in evidence — weave them in conversationally
-7. 7. If the user's query contains unclear terms, typos, symbols, or ambiguous names
+7. If the user's query contains unclear terms, typos, symbols, or ambiguous names
    that might refer to a supplement (e.g. "omega #", "vit d", "ash", "mag"):
    Ask a warm clarifying question instead of declining.
    Examples:
